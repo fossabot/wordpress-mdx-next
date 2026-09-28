@@ -1,0 +1,55 @@
+name: Deploy to test site
+
+# push 到 main 即部署到测试站 test-wordpress.freejishu.com
+# 所有服务器信息均存于 GitHub Secrets，本文件不含任何敏感信息
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 最小权限：本 workflow 不需要读写仓库
+permissions: {}
+
+# 同一时刻只允许一个部署在跑，避免并发 rsync 互相踩踏
+concurrency:
+  group: deploy-test
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          install -m 600 /dev/null ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+
+      - name: Rsync theme to server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          rsync -az --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='node_modules/' \
+            --exclude='.gitignore' \
+            -e "ssh -i ~/.ssh/deploy_key -p $SSH_PORT -o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes" \
+            ./ "$SSH_USER@$SSH_HOST:$DEPLOY_PATH/"
+
+      - name: Health check
+        env:
+          TEST_SITE_URL: ${{ secrets.TEST_SITE_URL }}
+        run: |
+          sleep 3
+          code=$(curl -fsS -o /dev/null -w '%{http_code}' "$TEST_SITE_URL")
+          echo "HTTP status: $code"
+          test "$code" = "200"
