@@ -5,7 +5,7 @@ $falseoff = __( '关闭', 'mdx' );
 
 //Some errors happend. I can't use WordPress Setting API. It said "Error: options page not found.", so I used another way to save the values.
 wp_enqueue_script( 'media-upload' );
-wp_enqueue_script( 'my-upload', get_bloginfo( 'template_url' ) . '/js/admin_upload.js' );
+wp_enqueue_script( 'my-upload', get_bloginfo( 'template_url' ) . '/js/admin_upload.js', array(), get_option( 'mdx_version_commit' ) );
 wp_enqueue_media();
 wp_enqueue_script( 'thickbox' );
 wp_enqueue_style( 'thickbox' );
@@ -55,21 +55,57 @@ wp_enqueue_script( 'wp-color-picker' );
 			'orange'      => '#ffab40',
 			'deep-orange' => '#ff6e40',
 		);
-		mdx_update_option( 'mdx_styles', sanitize_text_field( $_POST['mdx_styles'] ) );
-		mdx_update_option( 'mdx_styles_hex', $mdx_color_arr[ sanitize_text_field( $_POST['mdx_styles'] ) ] );
-		mdx_update_option( 'mdx_styles_act', sanitize_text_field( $_POST['mdx_styles_act'] ) );
-		mdx_update_option( 'mdx_act_hex', $mdx_act_arr[ sanitize_text_field( $_POST['mdx_styles_act'] ) ] );
+		if ( isset( $_POST['mdx_styles'], $_POST['mdx_styles_act'] ) ) {
+			mdx_update_option( 'mdx_styles', sanitize_text_field( $_POST['mdx_styles'] ) );
+			mdx_update_option( 'mdx_styles_hex', $mdx_color_arr[ sanitize_text_field( $_POST['mdx_styles'] ) ] );
+			mdx_update_option( 'mdx_styles_act', sanitize_text_field( $_POST['mdx_styles_act'] ) );
+			mdx_update_option( 'mdx_act_hex', $mdx_act_arr[ sanitize_text_field( $_POST['mdx_styles_act'] ) ] );
+		}
 		mdx_update_option( 'mdx_styles_dark', sanitize_text_field( $_POST['mdx_styles_dark'] ) );
 		if ( $_POST['mdx_styles_dark'] !== "disable" ) {
 			mdx_update_option( 'mdx_night_style', 'false' );
 			mdx_update_option( 'mdx_auto_night_style', 'false' );
 		}
-		mdx_update_option( 'mdx_md2', $_POST['mdx_md2'] );
+		$mdx_style_ver = isset( $_POST['mdx_style_ver'] ) ? sanitize_text_field( $_POST['mdx_style_ver'] ) : '';
+		if ( in_array( $mdx_style_ver, array( 'md1', 'md2', 'md3' ), true ) ) {
+			// 新版三选一风格选择器：映射回 mdx_md2/mdx_md3 两个旧选项（保持数据库兼容）
+			mdx_update_option( 'mdx_md2', $mdx_style_ver === 'md2' ? 'true' : 'false' );
+			mdx_update_option( 'mdx_md3', $mdx_style_ver === 'md3' ? 'true' : 'false' );
+		} elseif ( isset( $_POST['mdx_md2'], $_POST['mdx_md3'] ) ) {
+			// 兼容旧版表单
+			mdx_update_option( 'mdx_md2', $_POST['mdx_md2'] );
+			mdx_update_option( 'mdx_md3', $_POST['mdx_md3'] );
+			if ( $_POST['mdx_md3'] == 'true' && $_POST['mdx_md2'] == 'true' ) {
+				mdx_update_option( 'mdx_md2', 'false' );
+			}
+		}
 		$md2_font = sanitize_text_field( $_POST['mdx_md2_font'] );
 		if ( isset( $md2_font ) ) {
 			mdx_update_option( 'mdx_md2_font', $md2_font );
 		} else {
 			mdx_update_option( 'mdx_md2_font', 'false' );
+		}
+		$mdx_md3_seed = sanitize_text_field( $_POST['mdx_md3_seed'] );
+		if ( preg_match( '/^#[0-9a-fA-F]{6}$/', $mdx_md3_seed ) ) {
+			mdx_update_option( 'mdx_md3_seed', $mdx_md3_seed );
+		}
+		$mdx_md3_dynamic = sanitize_text_field( $_POST['mdx_md3_dynamic'] );
+		if ( isset( $mdx_md3_dynamic ) ) {
+			mdx_update_option( 'mdx_md3_dynamic', $mdx_md3_dynamic );
+		} else {
+			mdx_update_option( 'mdx_md3_dynamic', 'false' );
+		}
+		$mdx_md3_symbols = sanitize_text_field( $_POST['mdx_md3_symbols'] );
+		if ( isset( $mdx_md3_symbols ) ) {
+			mdx_update_option( 'mdx_md3_symbols', $mdx_md3_symbols );
+		} else {
+			mdx_update_option( 'mdx_md3_symbols', 'false' );
+		}
+		$mdx_md3_img_round = sanitize_text_field( $_POST['mdx_md3_img_round'] );
+		if ( isset( $mdx_md3_img_round ) ) {
+			mdx_update_option( 'mdx_md3_img_round', $mdx_md3_img_round );
+		} else {
+			mdx_update_option( 'mdx_md3_img_round', 'false' );
 		}
 		mdx_update_option( 'mdx_login_md', sanitize_text_field( $_POST['mdx_login_md'] ) );
 		mdx_update_option( 'mdx_chrome_color', sanitize_text_field( $_POST['mdx_chrome_color'] ) );
@@ -201,7 +237,7 @@ wp_enqueue_script( 'wp-color-picker' );
                         <option value="white" <?php if ( $mdx_v_styles == 'white' ){ ?>selected="selected"<?php } ?>>White</option>
                     </select>
                     <p class="description">
-                        <span class="mdx-color-preview mdx-theme-color-preview"></span> <?php _e( '主题颜色会影响所有页面的主色。', 'mdx' ); ?>
+                        <span class="mdx-color-preview mdx-theme-color-preview"></span> <?php _e( '主题颜色会影响所有页面的主色。', 'mdx' ); ?><strong><?php _e( '开启 Material Design 3 后此选项不生效。', 'mdx' ); ?></strong>
                     </p>
                 </td>
             </tr>
@@ -228,7 +264,7 @@ wp_enqueue_script( 'wp-color-picker' );
                         <option value="deep-orange" <?php if ( $mdx_v_styles_act == 'deep-orange' ){ ?>selected="selected"<?php } ?>>Deep Orange</option>
                     </select>
                     <p class="description">
-                        <span class="mdx-color-preview mdx-accent-color-preview"></span> <?php _e( '强调颜色会影响所有页面的强调色。', 'mdx' ); ?>
+                        <span class="mdx-color-preview mdx-accent-color-preview"></span> <?php _e( '强调颜色会影响所有页面的强调色。', 'mdx' ); ?><strong><?php _e( '开启 Material Design 3 后此选项不生效。', 'mdx' ); ?></strong>
                     </p>
                 </td>
             </tr>
@@ -245,15 +281,21 @@ wp_enqueue_script( 'wp-color-picker' );
                 </td>
             </tr>
             <tr>
-                <th scope="row"><?php _e( 'Material Design 2', 'mdx' ); ?></th>
+                <th scope="row"><?php _e( 'Material Design 风格', 'mdx' ); ?></th>
                 <td>
-					<?php $mdx_v_md2 = mdx_get_option( 'mdx_md2' ); ?>
+					<?php
+					$mdx_v_md2 = mdx_get_option( 'mdx_md2' );
+					$mdx_v_md3 = mdx_get_option( 'mdx_md3' );
+					$mdx_v_style_ver = ( $mdx_v_md3 === 'true' ) ? 'md3' : ( ( $mdx_v_md2 === 'true' ) ? 'md2' : 'md1' );
+					?>
                     <fieldset>
-                        <label><input type="radio" class="md2" name="mdx_md2" value="true" <?php if ( $mdx_v_md2 == 'true' ){ ?>checked="checked"<?php } ?>> <?php echo $trueon; ?>
+                        <label><input type="radio" class="mdx_style_ver" name="mdx_style_ver" value="md1" <?php if ( $mdx_v_style_ver == 'md1' ){ ?>checked="checked"<?php } ?>> <?php _e( 'Material Design 1（原版）', 'mdx' ); ?>
                         </label><br>
-                        <label><input type="radio" class="md2" name="mdx_md2" value="false" <?php if ( $mdx_v_md2 == 'false' ){ ?>checked="checked"<?php } ?>> <?php echo $falseoff; ?>
+                        <label><input type="radio" class="mdx_style_ver" name="mdx_style_ver" value="md2" <?php if ( $mdx_v_style_ver == 'md2' ){ ?>checked="checked"<?php } ?>> <?php _e( 'Material Design 2', 'mdx' ); ?>
                         </label><br>
-                        <p class="description"><?php _e( '开启后，主题将会使用 Material Design 2 风格。', 'mdx' ); ?></p>
+                        <label><input type="radio" class="mdx_style_ver" name="mdx_style_ver" value="md3" <?php if ( $mdx_v_style_ver == 'md3' ){ ?>checked="checked"<?php } ?>> <?php _e( 'Material Design 3 (Material You)', 'mdx' ); ?>
+                        </label><br>
+                        <p class="description"><?php _e( '选择主题使用的设计风格，三选一，选中后下方会展示该风格对应的选项。MD2/MD3 仅改变外观，不影响功能。<strong>选择 MD3 后，上方“主题颜色”“强调颜色”不再生效</strong>，配色由下方 MD3 选项决定，优先级：动态配色（开启且取色成功）&gt; MD3 主色（种子色）。', 'mdx' ); ?></p>
                     </fieldset>
                 </td>
             </tr>
@@ -267,6 +309,52 @@ wp_enqueue_script( 'wp-color-picker' );
                         <label><input type="radio" name="mdx_md2_font" value="false" <?php if ( $mdx_v_md2_font == 'false' ){ ?>checked="checked"<?php } ?>> <?php echo $falseoff; ?>
                         </label><br>
                         <p class="description"><?php _e( '开启后，部分标题文字将会使用 Material Design 2 风格字体显示。<strong>请注意该字体仅包含拉丁字符。</strong>', 'mdx' ); ?></p>
+                    </fieldset>
+                </td>
+            </tr>
+            <tr class="md3_sub">
+                <th scope="row"><label for="mdx_md3_seed"><?php _e( 'MD3 主色（种子色）', 'mdx' ); ?></label></th>
+                <td>
+                    <input name="mdx_md3_seed" type="color" id="mdx_md3_seed" value="<?php echo esc_attr( mdx_get_option( 'mdx_md3_seed' ) ); ?>"> <code id="mdx_md3_seed_val"><?php echo esc_html( mdx_get_option( 'mdx_md3_seed' ) ); ?></code>
+                    <p class="description"><?php _e( 'Material Design 3 配色方案的种子颜色，整套 tonal 色板由它派生。默认为 MD3 基准紫 <code>#6750a4</code>。', 'mdx' ); ?></p>
+                </td>
+            </tr>
+            <tr class="md3_sub">
+                <th scope="row"><?php _e( 'MD3 动态配色', 'mdx' ); ?></th>
+                <td>
+					<?php $mdx_v_md3_dynamic = mdx_get_option( 'mdx_md3_dynamic' ); ?>
+                    <fieldset>
+                        <label><input type="radio" name="mdx_md3_dynamic" value="true" <?php if ( $mdx_v_md3_dynamic == 'true' ){ ?>checked="checked"<?php } ?>> <?php echo $trueon; ?>
+                        </label><br>
+                        <label><input type="radio" name="mdx_md3_dynamic" value="false" <?php if ( $mdx_v_md3_dynamic == 'false' ){ ?>checked="checked"<?php } ?>> <?php echo $falseoff; ?>
+                        </label><br>
+                        <p class="description"><?php _e( '开启后，将从当前页面的特色图像中提取主色调作为种子色（类似 Android 的壁纸取色），失败时回退到上方设置的种子色。跨域图片无法取色时会自动回退。', 'mdx' ); ?></p>
+                    </fieldset>
+                </td>
+            </tr>
+            <tr class="md3_sub">
+                <th scope="row"><?php _e( 'MD3 图标（Material Symbols）', 'mdx' ); ?></th>
+                <td>
+					<?php $mdx_v_md3_symbols = mdx_get_option( 'mdx_md3_symbols' ); ?>
+                    <fieldset>
+                        <label><input type="radio" name="mdx_md3_symbols" value="true" <?php if ( $mdx_v_md3_symbols == 'true' ){ ?>checked="checked"<?php } ?>> <?php echo $trueon; ?>
+                        </label><br>
+                        <label><input type="radio" name="mdx_md3_symbols" value="false" <?php if ( $mdx_v_md3_symbols == 'false' ){ ?>checked="checked"<?php } ?>> <?php echo $falseoff; ?>
+                        </label><br>
+                        <p class="description"><?php _e( '开启后，使用 Material Design 3 的 Material Symbols 图标字体替换原有的 Material Icons。', 'mdx' ); ?></p>
+                    </fieldset>
+                </td>
+            </tr>
+            <tr class="md3_sub">
+                <th scope="row"><?php _e( 'MD3 正文图片圆角', 'mdx' ); ?></th>
+                <td>
+					<?php $mdx_v_md3_img_round = mdx_get_option( 'mdx_md3_img_round' ); ?>
+                    <fieldset>
+                        <label><input type="radio" name="mdx_md3_img_round" value="true" <?php if ( $mdx_v_md3_img_round == 'true' ){ ?>checked="checked"<?php } ?>> <?php echo $trueon; ?>
+                        </label><br>
+                        <label><input type="radio" name="mdx_md3_img_round" value="false" <?php if ( $mdx_v_md3_img_round == 'false' ){ ?>checked="checked"<?php } ?>> <?php echo $falseoff; ?>
+                        </label><br>
+                        <p class="description"><?php _e( '开启后，文章/页面正文中的图片将使用 12px 圆角（MD3 <code>corner.medium</code>），符合 Material Design 3 的形状规范；图片直接嵌入正文，不再呈现“卡片套卡片”的直角生硬感。仅 MD3 风格下生效。', 'mdx' ); ?></p>
                     </fieldset>
                 </td>
             </tr>

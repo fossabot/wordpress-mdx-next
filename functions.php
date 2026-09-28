@@ -143,9 +143,32 @@ function mdx_css() {
         wp_register_style('mdx_oled', $files_root.'/css/oled.css', '', '');
         wp_enqueue_style('mdx_oled');
     }
-    if (mdx_get_option("mdx_md2") == "true") {
+    if (mdx_get_option("mdx_md2") == "true" && mdx_get_option("mdx_md3") != "true") {
         wp_register_style('mdx_md2', $files_root.'/css/md2.css', '', '');
         wp_enqueue_style('mdx_md2');
+    }
+    if (mdx_get_option("mdx_md3") == "true") {
+        wp_register_style('mdx_md3', $files_root.'/css/md3.css', '', (string)@filemtime(get_template_directory().'/css/md3.css'));
+        wp_enqueue_style('mdx_md3');
+        $mdx_md3_seed = mdx_get_option('mdx_md3_seed');
+        if (!preg_match('/^#[0-9a-fA-F]{6}$/', (string)$mdx_md3_seed)) {
+            $mdx_md3_seed = '#6750a4';
+        }
+        $mdx_md3_r = hexdec(substr($mdx_md3_seed, 1, 2));
+        $mdx_md3_g = hexdec(substr($mdx_md3_seed, 3, 2));
+        $mdx_md3_b = hexdec(substr($mdx_md3_seed, 5, 2));
+        $mdx_md3_rgb = $mdx_md3_r.','.$mdx_md3_g.','.$mdx_md3_b;
+        // 种子色偏亮时用深色文字，偏暗时用白色文字（亮度阈值 ~150/255）
+        $mdx_md3_on_primary = (0.299 * $mdx_md3_r + 0.587 * $mdx_md3_g + 0.114 * $mdx_md3_b) > 150 ? '#1d1b20' : '#ffffff';
+        wp_add_inline_style('mdx_md3', ':root{--mdx-md3-seed:'.$mdx_md3_seed.';--mdx-md3-on-primary:'.$mdx_md3_on_primary.';}body{--mdx-theme-color:'.$mdx_md3_rgb.'!important;--mdx-theme-color-with-white:'.$mdx_md3_rgb.'!important;}');
+        if (mdx_get_option('mdx_md3_symbols') === 'true') {
+            wp_register_style('mdx_md3_symbols', $files_root.'/css/md3-symbols.css', '', (string)@filemtime(get_template_directory().'/css/md3-symbols.css'));
+            wp_enqueue_style('mdx_md3_symbols');
+        }
+        if (mdx_get_option('mdx_md3_img_round') === 'true') {
+            // MD3 形状规范：正文图片直接嵌入内容块并带 12px 圆角（corner.medium），排除 wp-smiley 表情
+            wp_add_inline_style('mdx_md3', 'article img:not(.wp-smiley){border-radius:12px;}');
+        }
     }
     if (is_home() && mdx_get_option('mdx_index_head_style') === 'slide') {
         wp_register_style('mdx_flickity_css', $files_root.'/css/flickity.min.css', '', '');
@@ -220,6 +243,10 @@ function mdx_js() {
         wp_enqueue_script('mdx_masonry_js');
     }
     wp_enqueue_script('mdx_sl_js');
+    if (mdx_get_option("mdx_md3") == "true" && mdx_get_option('mdx_md3_dynamic') === 'true') {
+        wp_register_script('mdx_md3_js', $files_root.'/js/md3.js', false, '', true);
+        wp_enqueue_script('mdx_md3_js');
+    }
 }
 add_action('wp_enqueue_scripts', 'mdx_js');
 
