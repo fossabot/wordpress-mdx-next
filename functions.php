@@ -165,6 +165,10 @@ function mdx_css() {
             wp_register_style('mdx_md3_symbols', $files_root.'/css/md3-symbols.css', '', (string)@filemtime(get_template_directory().'/css/md3-symbols.css'));
             wp_enqueue_style('mdx_md3_symbols');
         }
+        if (mdx_get_option('mdx_md3_img_round') === 'true') {
+            // MD3 形状规范：正文图片直接嵌入内容块并带 12px 圆角（corner.medium），排除 wp-smiley 表情
+            wp_add_inline_style('mdx_md3', 'article img:not(.wp-smiley){border-radius:12px;}');
+        }
     }
     if (is_home() && mdx_get_option('mdx_index_head_style') === 'slide') {
         wp_register_style('mdx_flickity_css', $files_root.'/css/flickity.min.css', '', '');

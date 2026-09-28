@@ -101,6 +101,12 @@ wp_enqueue_script( 'wp-color-picker' );
 		} else {
 			mdx_update_option( 'mdx_md3_symbols', 'false' );
 		}
+		$mdx_md3_img_round = sanitize_text_field( $_POST['mdx_md3_img_round'] );
+		if ( isset( $mdx_md3_img_round ) ) {
+			mdx_update_option( 'mdx_md3_img_round', $mdx_md3_img_round );
+		} else {
+			mdx_update_option( 'mdx_md3_img_round', 'false' );
+		}
 		mdx_update_option( 'mdx_login_md', sanitize_text_field( $_POST['mdx_login_md'] ) );
 		mdx_update_option( 'mdx_chrome_color', sanitize_text_field( $_POST['mdx_chrome_color'] ) );
 		mdx_update_option( 'mdx_title_bar', sanitize_text_field( $_POST['mdx_title_bar'] ) );
@@ -336,6 +342,19 @@ wp_enqueue_script( 'wp-color-picker' );
                         <label><input type="radio" name="mdx_md3_symbols" value="false" <?php if ( $mdx_v_md3_symbols == 'false' ){ ?>checked="checked"<?php } ?>> <?php echo $falseoff; ?>
                         </label><br>
                         <p class="description"><?php _e( '开启后，使用 Material Design 3 的 Material Symbols 图标字体替换原有的 Material Icons。', 'mdx' ); ?></p>
+                    </fieldset>
+                </td>
+            </tr>
+            <tr class="md3_sub">
+                <th scope="row"><?php _e( 'MD3 正文图片圆角', 'mdx' ); ?></th>
+                <td>
+					<?php $mdx_v_md3_img_round = mdx_get_option( 'mdx_md3_img_round' ); ?>
+                    <fieldset>
+                        <label><input type="radio" name="mdx_md3_img_round" value="true" <?php if ( $mdx_v_md3_img_round == 'true' ){ ?>checked="checked"<?php } ?>> <?php echo $trueon; ?>
+                        </label><br>
+                        <label><input type="radio" name="mdx_md3_img_round" value="false" <?php if ( $mdx_v_md3_img_round == 'false' ){ ?>checked="checked"<?php } ?>> <?php echo $falseoff; ?>
+                        </label><br>
+                        <p class="description"><?php _e( '开启后，文章/页面正文中的图片将使用 12px 圆角（MD3 <code>corner.medium</code>），符合 Material Design 3 的形状规范；图片直接嵌入正文，不再呈现“卡片套卡片”的直角生硬感。仅 MD3 风格下生效。', 'mdx' ); ?></p>
                     </fieldset>
                 </td>
             </tr>

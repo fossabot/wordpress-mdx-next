@@ -122,6 +122,7 @@ $mdx_default_values = array(
     'mdx_md3' => 'false',
     'mdx_md3_seed' => '#6750a4',
     'mdx_md3_dynamic' => 'false',
-    'mdx_md3_symbols' => 'false'
+    'mdx_md3_symbols' => 'false',
+    'mdx_md3_img_round' => 'true'
 );
 ?>
